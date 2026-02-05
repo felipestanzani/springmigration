@@ -5,6 +5,7 @@ import com.felipestanzani.migrationdemo.dto.ProductResponse;
 import com.felipestanzani.migrationdemo.model.Product;
 import com.felipestanzani.migrationdemo.repository.ProductRepository;
 import com.felipestanzani.migrationdemo.service.contract.ProductService;
+import io.github.resilience4j.retry.annotation.Retry;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,12 +25,20 @@ public class ProductServiceImpl implements ProductService {
         return repository.save(product);
     }
 
+    @Retry(name = "findAllNames"
+            , fallbackMethod = "fallbackFindAllNames")
     @Override
     public List<String> findAllNames() {
+        if (Math.random() > 0.5) throw new RuntimeException("It is not frozen, it is in panic!!!");
+
         return repository.findAll()
                 .stream()
                 .map(Product::getName)
                 .toList();
+    }
+
+    public List<String> fallbackFindAllNames() {
+        return List.of("Charuteira", "Infundibuliar");
     }
 
     @Override
